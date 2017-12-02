@@ -1,32 +1,70 @@
+#! /usr/bin/python3
+# -*- coding:utf-8 -*-
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk
 import cairo
+import math
 
 class Triangle:
     def __init__(self):
-        self.width  = 100
-        self.height = 100
-        self.pos    = [50, 50]
+        self.width  = 100.0
+        self.height = 100.0
+        self.pos    = [50.0, 50.0]
         self.color  = [0.1, 0.2, 0.5]
+        self.rot    = 0.0
+        self.tmp    = 0
+    
+    def _rotate(self, rot):
+        pass
+
+    def _set_width(self, w):
+        delta  = ( w - self.width ) / 2
+        deltaX = delta * math.cos( self.rot )
+        deltaY = delta * math.sin( self.rot )
+        center = [self.pos[0] + self.width/2, self.pos[1] + self.height/2]
+        new_center = [ center[0] + deltaX, center[1] + deltaY ]
+        self.width = w
+        self.pos[0] = new_center[0] - self.width/2
+        self.pos[1] = new_center[1] - self.height/2
+
+    def _set_height(self, h):
+        delta  = ( h - self.height ) / 2
+        deltaY = delta * math.cos( self.rot )
+        deltaX = delta * math.sin( self.rot )
+        center = [self.pos[0] + self.width/2, self.pos[1] + self.height/2]
+        new_center = [ center[0] - deltaX, center[1] + deltaY ]
+        self.height = h
+        self.pos[0] = new_center[0] - self.width/2
+        self.pos[1] = new_center[1] - self.height/2
 
     def on_draw(self, ctx):
+        self.rot += 0.01
+        if self.tmp % 20 < 10:
+            self.tmp += 1
+            self._set_height(self.height+10)
+        else:
+            self.tmp += 1
+            self._set_height(self.height-10)
         ctx.save()
         ctx.set_source_rgb(self.color[0], self.color[1], self.color[2])
-        ctx.translate(self.pos[0], self.pos[1])
+        center = [ self.pos[0]+self.width/2, self.pos[1]+self.height/2]
+        ctx.translate(center[0], center[1])
+        ctx.rotate(self.rot)
 
         ctx.new_path()
-        ctx.move_to(self.width/2, 0)
-        ctx.line_to(self.width, self.height)
-        ctx.line_to(0, self.height)
+        ctx.move_to(0, -self.height/2)
+        ctx.line_to(-self.width/2, self.height/2)
+        ctx.line_to(self.width/2, self.height/2)
         ctx.close_path()
 
         ctx.fill()
         ctx.restore()
 
-    def set_pos(self,newpos):
-        self.pos = newpos
-    
+    def set_pos(self, cursor):
+        self.pos[0] = cursor[0] - self.width/2
+        self.pos[1] = cursor[1] - self.height/2
+
     def hit_test(self, x, y):
         if x > self.pos[0] and x < (self.pos[0]+self.width):
             if y > self.pos[1] and y < (self.pos[1]+self.height):
